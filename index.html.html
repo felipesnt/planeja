@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta name="theme-color" content="#0f0f0f" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Meu Kanban" />
+<title>Meu Kanban</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+:root {
+  --bg: #0f0f0f;
+  --surface: #181818;
+  --surface2: #222222;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.14);
+  --text: #f0ede8;
+  --text2: #8a8680;
+  --text3: #5a5652;
+  --clt: #3b6fd4;
+  --clt-bg: rgba(59,111,212,0.12);
+  --cons: #2e9e6b;
+  --cons-bg: rgba(46,158,107,0.12);
+  --free: #c97d2a;
+  --free-bg: rgba(201,125,42,0.12);
+  --alta: #c94040;
+  --alta-bg: rgba(201,64,64,0.12);
+  --media: #c97d2a;
+  --media-bg: rgba(201,125,42,0.12);
+  --baixa: #2e9e6b;
+  --baixa-bg: rgba(46,158,107,0.12);
+  --overdue: #c94040;
+  --soon: #c97d2a;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --font: 'DM Sans', sans-serif;
+  --mono: 'DM Mono', monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* ── HEADER ── */
+header {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(15,15,15,0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 16px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.logo { font-size: 14px; font-weight: 500; letter-spacing: 0.02em; color: var(--text); }
+.logo span { color: var(--text3); font-weight: 300; }
+.gcal-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.gcal-badge:hover { border-color: var(--border2); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cons); flex-shrink: 0; }
+.dot.off { background: var(--text3); }
+
+/* ── TABS ── */
+.tabs-wrap {
+  padding: 12px 16px 0;
+  display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+  scrollbar-width: none;
+}
+.tabs-wrap::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  font-size: 12px; font-weight: 400;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text2);
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.tab.active { background: var(--text); color: var(--bg); border-color: var(--text); font-weight: 500; }
+
+/* ── STATS ── */
+.stats {
+  display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 8px; padding: 12px 16px;
+}
+.stat {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 10px 8px;
+}
+.stat-label { font-size: 10px; color: var(--text3); margin-bottom: 4px; font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-val { font-size: 22px; font-weight: 300; color: var(--text); line-height: 1; }
+.stat-val.danger { color: var(--overdue); }
+
+/* ── BOARD ── */
+.board {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 10px;
+  padding: 0 16px 100px;
+}
+@media (max-width: 600px) {
+  .board { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+.col {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px;
+  min-height: 200px;
+}
+.col-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.col-title {
+  font-size: 10px; font-weight: 500; color: var(--text3);
+  text-transform: uppercase; letter-spacing: 0.08em;
+  font-family: var(--mono);
+}
+.col-right { display: flex; align-items: center; gap: 6px; }
+.col-count {
+  font-size: 10px; color: var(--text3);
+  background: var(--surface2);
+  border-radius: 10px; padding: 1px 7px;
+  font-family: var(--mono);
+}
+.add-btn {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text3);
+  font-size: 16px; line-height: 1;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.add-btn:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 10px 11px;
+  margin-bottom: 7px;
+  cursor: grab;
+  transition: border-color 0.15s, transform 0.1s;
+  position: relative;
+  -webkit-user-select: none; user-select: none;
+}
+.card:active { transform: scale(0.98); cursor: grabbing; }
+.card:hover { border-color: var(--border2); }
+.card.overdue { border-left: 2px solid var(--overdue); }
+.card.soon { border-left: 2px solid var(--soon); }
+.card-title { font-size: 13px; line-height: 1.45; color: var(--text); margin-bottom: 8px; }
+.card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 7px; }
+.tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 20px; font-weight: 500;
+  font-family: var(--mono);
+}
+.t-clt { background: var(--clt-bg); color: var(--clt); }
+.t-consultoria { background: var(--cons-bg); color: var(--cons); }
+.t-freelancer { background: var(--free-bg); color: var(--free); }
+.t-alta { background: var(--alta-bg); color: var(--alta); }
+.t-media { background: var(--media-bg); color: var(--media); }
+.t-baixa { background: var(--baixa-bg); color: var(--baixa); }
+.t-date { background: var(--surface2); color: var(--text2); }
+.t-overdue { background: var(--alta-bg); color: var(--overdue); }
+.t-soon { background: var(--media-bg); color: var(--soon); }
+.card-footer { display: flex; align-items: center; justify-content: space-between; }
+.avatars { display: flex; gap: -2px; }
+.av {
+  width: 20px; height: 20px; border-radius: 50%;
+  font-size: 8px; font-weight: 500;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--surface);
+  margin-left: -3px;
+  flex-shrink: 0;
+}
+.av:first-child { margin-left: 0; }
+.av-0 { background: var(--clt-bg); color: var(--clt); }
+.av-1 { background: var(--cons-bg); color: var(--cons); }
+.av-2 { background: var(--free-bg); color: var(--free); }
+.av-3 { background: rgba(180,100,200,0.15); color: #b46ac8; }
+.av-4 { background: rgba(100,180,200,0.15); color: #64b4c8; }
+.card-actions { display: flex; gap: 3px; opacity: 0; transition: opacity 0.15s; }
+.card:hover .card-actions, .card:focus-within .card-actions { opacity: 1; }
+@media (max-width: 768px) { .card-actions { opacity: 1; } }
+.cbtn {
+  font-size: 10px; padding: 2px 6px;
+  border-radius: 4px; border: 1px solid var(--border);
+  background: var(--surface); color: var(--text2);
+  cursor: pointer; font-family: var(--mono);
+  transition: all 0.12s;
+}
+.cbtn:hover { border-color: var(--border2); color: var(--text); }
+.cbtn.gcal { color: var(--clt); border-color: rgba(59,111,212,0.25); }
+.cbtn.del { color: var(--overdue); border-color: rgba(201,64,64,0.2); }
+.empty { font-size: 11px; color: var(--text3); text-align: center; padding: 24px 0; font-family: var(--mono); }
+
+/* ── MODAL ── */
+.overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+  z-index: 200; align-items: flex-end; justify-content: center;
+}
+.overlay.open { display: flex; }
+@media (min-width: 600px) { .overlay { align-items: center; } }
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius) var(--radius) 0 0;
+  padding: 20px 20px 32px;
+  width: 100%; max-width: 420px;
+  max-height: 92dvh; overflow-y: auto;
+}
+@media (min-width: 600px) { .modal { border-radius: var(--radius); } }
+.modal-handle { width: 36px; height: 3px; background: var(--border2); border-radius: 2px; margin: 0 auto 20px; }
+@media (min-width: 600px) { .modal-handle { display: none; } }
+.modal h3 { font-size: 14px; font-weight: 500; margin-bottom: 16px; color: var(--text); }
+.field { margin-bottom: 12px; }
+label { font-size: 10px; color: var(--text3); font-family: var(--mono); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 5px; }
+input[type=text], input[type=date], input[type=time], input[type=email], select, textarea {
+  width: 100%; background: var(--bg);
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  padding: 9px 11px; font-size: 13px;
+  color: var(--text); font-family: var(--font);
+  appearance: none; -webkit-appearance: none;
+  outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus, textarea:focus { border-color: rgba(255,255,255,0.3); }
+select option { background: var(--surface); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.members-row { display: flex; gap: 6px; }
+.members-row input { flex: 1; }
+.members-row button {
+  padding: 9px 12px; font-size: 12px;
+  border: 1px solid var(--border2); border-radius: var(--radius-sm);
+  background: var(--surface2); color: var(--text);
+  cursor: pointer; white-space: nowrap; font-family: var(--mono);
+  transition: background 0.12s;
+}
+.members-row button:hover { background: var(--border2); }
+.member-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.chip {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 11px; background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 20px;
+  padding: 3px 9px; color: var(--text2);
+}
+.chip-x { cursor: pointer; color: var(--text3); font-size: 13px; line-height: 1; }
+.chip-x:hover { color: var(--text); }
+.modal-footer { display: flex; gap: 8px; margin-top: 18px; }
+.modal-footer button {
+  flex: 1; padding: 11px; font-size: 13px; font-weight: 500;
+  border-radius: var(--radius-sm); cursor: pointer;
+  border: 1px solid var(--border2);
+  background: var(--surface2); color: var(--text2);
+  font-family: var(--font);
+  transition: all 0.12s;
+}
+.modal-footer .btn-save {
+  background: var(--text); color: var(--bg);
+  border-color: var(--text);
+}
+.modal-footer .btn-save:hover { background: #d8d5d0; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(8px);
+  background: var(--text); color: var(--bg);
+  padding: 9px 20px; border-radius: 20px;
+  font-size: 12px; font-weight: 500;
+  opacity: 0; transition: opacity 0.25s, transform 0.25s;
+  pointer-events: none; z-index: 300; white-space: nowrap;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── GCAL MODAL ── */
+.gcal-info {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px;
+  font-size: 12px; color: var(--text2); line-height: 1.6;
+  margin-bottom: 12px;
+}
+.gcal-info strong { color: var(--text); font-weight: 500; }
+.gcal-steps { counter-reset: step; list-style: none; }
+.gcal-steps li {
+  counter-increment: step;
+  display: flex; gap: 10px; margin-bottom: 10px; font-size: 12px; color: var(--text2); line-height: 1.5;
+}
+.gcal-steps li::before {
+  content: counter(step);
+  min-width: 20px; height: 20px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-family: var(--mono); color: var(--text3); flex-shrink: 0;
+}
+.gcal-steps a { color: var(--clt); text-decoration: none; }
+.gcal-steps a:hover { text-decoration: underline; }
+code {
+  font-family: var(--mono); font-size: 11px;
+  background: var(--surface2); padding: 1px 5px;
+  border-radius: 3px; color: var(--free);
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Kanban <span>/ 3 trabalhos</span></div>
+  <div class="gcal-badge" onclick="showGcalHelp()">
+    <div class="dot" id="gcal-dot"></div>
+    <span id="gcal-label">Google Cal</span>
+  </div>
+</header>
+
+<div class="tabs-wrap" id="tabs"></div>
+<div class="stats" id="stats"></div>
+<div class="board" id="board"></div>
+
+<!-- Modal tarefa -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3 id="modal-title">Nova tarefa</h3>
+    <div class="field">
+      <label>Título</label>
+      <input type="text" id="m-title" placeholder="O que precisa ser feito?" />
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Trabalho</label>
+        <select id="m-work">
+          <option value="clt">CLT</option>
+          <option value="consultoria">Consultoria</option>
+          <option value="freelancer">Freelancer</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Prioridade</label>
+        <select id="m-prio">
+          <option value="alta">Alta</option>
+          <option value="media">Média</option>
+          <option value="baixa">Baixa</option>
+        </select>
+      </div>
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>Prazo</label>
+        <input type="date" id="m-date" />
+      </div>
+      <div class="field">
+        <label>Horário</label>
+        <input type="time" id="m-time" value="09:00" />
+      </div>
+    </div>
+    <div class="field">
+      <label>Membros</label>
+      <div class="members-row">
+        <input type="text" id="m-member" placeholder="Nome ou e-mail" />
+        <button onclick="addMember()">+ Add</button>
+      </div>
+      <div class="member-chips" id="m-chips"></div>
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveCard()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Google Calendar help -->
+<div class="overlay" id="gcal-overlay">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <h3>Integração Google Calendar</h3>
+    <div class="gcal-info">
+      Para sincronizar tarefas com o Google Calendar fora do Claude, você precisa configurar uma chave de API. É gratuito e leva ~5 minutos.
+    </div>
+    <ol class="gcal-steps">
+      <li>Acesse <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a> e crie um projeto.</li>
+      <li>Em <strong>APIs e Serviços → Biblioteca</strong>, ative <strong>Google Calendar API</strong>.</li>
+      <li>Vá em <strong>Credenciais → Criar credencial → ID do cliente OAuth 2.0</strong>. Tipo: <strong>Aplicativo da Web</strong>.</li>
+      <li>Cole o <strong>Client ID</strong> no campo abaixo e salve.</li>
+      <li>Ao clicar em "Cal" em um card com prazo, será pedido login Google — depois disso sincroniza automaticamente.</li>
+    </ol>
+    <div class="field" style="margin-top:14px;">
+      <label>Seu Google Client ID</label>
+      <input type="text" id="gcal-client-id" placeholder="xxxx.apps.googleusercontent.com" />
+    </div>
+    <div class="modal-footer">
+      <button onclick="closeGcalModal()">Fechar</button>
+      <button class="btn-save" onclick="saveClientId()">Salvar Client ID</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const WORKS = [{id:'all',label:'Todos'},{id:'clt',label:'CLT'},{id:'consultoria',label:'Consultoria'},{id:'freelancer',label:'Freelancer'}];
+const COLS = [{id:'pendente',label:'Pendente'},{id:'andamento',label:'Em andamento'},{id:'concluido',label:'Concluído'}];
+const WORK_LABEL = {clt:'CLT',consultoria:'Consultoria',freelancer:'Freelancer'};
+const PRIO_LABEL = {alta:'Alta',media:'Média',baixa:'Baixa'};
+const AV = ['av-0','av-1','av-2','av-3','av-4'];
+
+let activeTab = 'all';
+let addingToCol = 'pendente';
+let editingId = null;
+let modalMembers = [];
+let nextId = 10;
+let gAccessToken = null;
+let gClientId = localStorage.getItem('gcal_client_id') || '';
+
+const today = new Date(); today.setHours(0,0,0,0);
+
+function parseDate(d) { if(!d) return null; const p = new Date(d+'T00:00:00'); p.setHours(0,0,0,0); return p; }
+function isOverdue(d,col) { return col!=='concluido' && parseDate(d) && parseDate(d)<today; }
+function isSoon(d,col) { if(col==='concluido'||!d) return false; const p=parseDate(d); if(!p) return false; const diff=(p-today)/864e5; return diff>=0&&diff<=2; }
+function fmtDate(d) { if(!d) return ''; return parseDate(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}); }
+function initials(n) { const p=n.trim().split(/\s+/); return p.length>1?(p[0][0]+p[1][0]).toUpperCase():n.substring(0,2).toUpperCase(); }
+function avColor(n) { let h=0; for(let c of n) h=(h*31+c.charCodeAt(0))%AV.length; return AV[h]; }
+
+let cards = JSON.parse(localStorage.getItem('kanban_cards') || 'null') || [
+  {id:1,title:'Revisar relatório mensal',work:'clt',prio:'alta',col:'pendente',date:'2026-03-17',time:'09:00',members:['Ana Lima']},
+  {id:2,title:'Reunião de alinhamento com gestor',work:'clt',prio:'media',col:'pendente',date:'2026-03-15',time:'10:00',members:[]},
+  {id:3,title:'Atualizar planilha de controle',work:'clt',prio:'baixa',col:'andamento',date:'',time:'',members:['Carlos Melo']},
+  {id:4,title:'Enviar proposta comercial cliente A',work:'consultoria',prio:'alta',col:'pendente',date:'2026-03-16',time:'09:00',members:['Beatriz Souza']},
+  {id:5,title:'Elaborar apresentação diagnóstico',work:'consultoria',prio:'alta',col:'andamento',date:'2026-03-20',time:'10:00',members:[]},
+  {id:6,title:'Emitir nota fiscal do projeto',work:'consultoria',prio:'media',col:'pendente',date:'2026-03-31',time:'',members:[]},
+  {id:7,title:'Entrega do módulo de análise',work:'freelancer',prio:'alta',col:'pendente',date:'2026-03-18',time:'09:00',members:['Diana Rocha']},
+  {id:8,title:'Call de alinhamento com cliente',work:'freelancer',prio:'media',col:'concluido',date:'',time:'',members:['Diana Rocha','Carlos Melo']},
+  {id:9,title:'Enviar horas trabalhadas',work:'freelancer',prio:'baixa',col:'pendente',date:'2026-03-30',time:'',members:[]},
+];
+
+function save() { localStorage.setItem('kanban_cards', JSON.stringify(cards)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function renderStats() {
+  const f = activeTab==='all' ? cards : cards.filter(c=>c.work===activeTab);
+  const ov = f.filter(c=>isOverdue(c.date,c.col)).length;
+  const sn = f.filter(c=>isSoon(c.date,c.col)&&!isOverdue(c.date,c.col)).length;
+  document.getElementById('stats').innerHTML = `
+    <div class="stat"><div class="stat-label">Total</div><div class="stat-val">${f.length}</div></div>
+    <div class="stat"><div class="stat-label">Pendentes</div><div class="stat-val">${f.filter(c=>c.col!=='concluido').length}</div></div>
+    <div class="stat"><div class="stat-label">Vencidas</div><div class="stat-val ${ov>0?'danger':''}">${ov}</div></div>
+    <div class="stat"><div class="stat-label">Vencem em 2d</div><div class="stat-val ${sn>0?'danger':''}">${sn}</div></div>`;
+}
+
+function renderTabs() {
+  document.getElementById('tabs').innerHTML = WORKS.map(w =>
+    `<div class="tab ${activeTab===w.id?'active':''}" onclick="setTab('${w.id}')">${w.label}</div>`
+  ).join('');
+}
+
+function renderBoard() {
+  const f = activeTab==='all' ? cards : cards.filter(c=>c.work===activeTab);
+  document.getElementById('board').innerHTML = COLS.map(col => {
+    const cc = f.filter(c=>c.col===col.id);
+    return `<div class="col" ondragover="event.preventDefault()" ondrop="onDrop(event,'${col.id}')">
+      <div class="col-header">
+        <span class="col-title">${col.label}</span>
+        <div class="col-right">
+          <span class="col-count">${cc.length}</span>
+          <button class="add-btn" onclick="openModal('${col.id}',null)">+</button>
+        </div>
+      </div>
+      ${cc.length===0?'<div class="empty">vazio</div>':''}
+      ${cc.map(card => {
+        const ov = isOverdue(card.date,card.col);
+        const sn = !ov && isSoon(card.date,card.col);
+        return `<div class="card ${ov?'overdue':sn?'soon':''}" draggable="true" ondragstart="onDragStart(event,${card.id})">
+          <div class="card-title">${card.title}</div>
+          <div class="card-tags">
+            <span class="tag t-${card.work}">${WORK_LABEL[card.work]}</span>
+            <span class="tag t-${card.prio}">${PRIO_LABEL[card.prio]}</span>
+            ${card.date ? `<span class="tag ${ov?'t-overdue':sn?'t-soon':'t-date'}">${ov?'Venceu ':''}${fmtDate(card.date)}</span>` : ''}
+          </div>
+          <div class="card-footer">
+            <div class="avatars">${card.members.map(m=>`<div class="av ${avColor(m)}" title="${m}">${initials(m)}</div>`).join('')}</div>
+            <div class="card-actions">
+              ${card.date?`<button class="cbtn gcal" onclick="syncGcal(${card.id})">Cal</button>`:''}
+              <button class="cbtn" onclick="openModal('${col.id}',${card.id})">Ed</button>
+              <button class="cbtn del" onclick="delCard(${card.id})">Del</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function render() { renderStats(); renderTabs(); renderBoard(); updateGcalBadge(); }
+function setTab(id) { activeTab=id; render(); }
+
+let dragging = null;
+function onDragStart(e,id) { dragging=id; e.dataTransfer.effectAllowed='move'; }
+function onDrop(e,col) { e.preventDefault(); if(dragging){ const c=cards.find(x=>x.id===dragging); if(c){c.col=col;save();} dragging=null; render(); } }
+
+function delCard(id) { cards=cards.filter(c=>c.id!==id); save(); render(); showToast('Tarefa removida'); }
+
+function openModal(col,id) {
+  addingToCol=col; editingId=id; modalMembers=[];
+  if(id) {
+    const c=cards.find(x=>x.id===id);
+    document.getElementById('modal-title').textContent='Editar tarefa';
+    document.getElementById('m-title').value=c.title;
+    document.getElementById('m-work').value=c.work;
+    document.getElementById('m-prio').value=c.prio;
+    document.getElementById('m-date').value=c.date||'';
+    document.getElementById('m-time').value=c.time||'09:00';
+    modalMembers=[...c.members];
+  } else {
+    document.getElementById('modal-title').textContent='Nova tarefa';
+    document.getElementById('m-title').value='';
+    document.getElementById('m-date').value='';
+    document.getElementById('m-time').value='09:00';
+    document.getElementById('m-work').value='clt';
+    document.getElementById('m-prio').value='alta';
+  }
+  renderChips();
+  document.getElementById('modal-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('m-title').focus(),100);
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); editingId=null; modalMembers=[]; }
+
+function addMember() {
+  const inp=document.getElementById('m-member');
+  const v=inp.value.trim(); if(v&&!modalMembers.includes(v)){modalMembers.push(v);renderChips();}
+  inp.value=''; inp.focus();
+}
+function removeMember(i) { modalMembers.splice(i,1); renderChips(); }
+function renderChips() {
+  document.getElementById('m-chips').innerHTML = modalMembers.map((m,i)=>
+    `<div class="chip">${m}<span class="chip-x" onclick="removeMember(${i})">×</span></div>`
+  ).join('');
+}
+
+function saveCard() {
+  const title=document.getElementById('m-title').value.trim(); if(!title) return;
+  const data={title,work:document.getElementById('m-work').value,prio:document.getElementById('m-prio').value,col:addingToCol,date:document.getElementById('m-date').value,time:document.getElementById('m-time').value,members:[...modalMembers]};
+  if(editingId){Object.assign(cards.find(c=>c.id===editingId),data);}
+  else{cards.push({id:nextId++,...data});}
+  save(); closeModal(); render();
+  showToast(editingId?'Tarefa atualizada!':'Tarefa adicionada!');
+}
+
+// ── GOOGLE CALENDAR ──
+function updateGcalBadge() {
+  const dot=document.getElementById('gcal-dot');
+  const lbl=document.getElementById('gcal-label');
+  if(gAccessToken){dot.classList.remove('off');lbl.textContent='Cal: conectado';}
+  else if(gClientId){dot.classList.remove('off');dot.style.background='var(--soon)';lbl.textContent='Cal: fazer login';}
+  else{dot.classList.add('off');lbl.textContent='Configurar Cal';}
+}
+
+function showGcalHelp() {
+  document.getElementById('gcal-client-id').value=gClientId;
+  document.getElementById('gcal-overlay').classList.add('open');
+}
+function closeGcalModal(){document.getElementById('gcal-overlay').classList.remove('open');}
+function saveClientId(){
+  gClientId=document.getElementById('gcal-client-id').value.trim();
+  localStorage.setItem('gcal_client_id',gClientId);
+  closeGcalModal();updateGcalBadge();
+  showToast('Client ID salvo!');
+}
+
+function gcalLogin(cb){
+  if(!gClientId){showGcalHelp();return;}
+  if(gAccessToken){cb();return;}
+  const w=window.open('about:blank','gcal_auth','width=480,height=640');
+  const scope='https://www.googleapis.com/auth/calendar.events';
+  const redirect='postMessage';
+  const authUrl=`https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(gClientId)}&redirect_uri=${encodeURIComponent(location.origin+location.pathname)}&response_type=token&scope=${encodeURIComponent(scope)}&prompt=consent`;
+  w.location.href=authUrl;
+  const handler=e=>{
+    if(e.data&&e.data.access_token){
+      gAccessToken=e.data.access_token;
+      window.removeEventListener('message',handler);
+      updateGcalBadge();cb();
+    }
+  };
+  window.addEventListener('message',handler);
+  // handle redirect back
+  const poll=setInterval(()=>{
+    try {
+      const hash=w.location.hash;
+      if(hash&&hash.includes('access_token')){
+        const params=new URLSearchParams(hash.slice(1));
+        gAccessToken=params.get('access_token');
+        clearInterval(poll);w.close();
+        window.removeEventListener('message',handler);
+        updateGcalBadge();cb();
+      }
+    } catch(e){}
+    if(w.closed){clearInterval(poll);window.removeEventListener('message',handler);}
+  },500);
+}
+
+function syncGcal(id){
+  const card=cards.find(c=>c.id===id);
+  if(!card||!card.date){showToast('Defina um prazo antes.');return;}
+  if(!gClientId){showToast('Configure o Client ID primeiro.');showGcalHelp();return;}
+  gcalLogin(()=>doCreateEvent(card));
+}
+
+function doCreateEvent(card){
+  const dt=card.date+'T'+(card.time||'09:00')+':00';
+  const endDt=card.date+'T'+(card.time?addHour(card.time):'10:00')+':00';
+  const tz='America/Sao_Paulo';
+  const body={
+    summary:`[${WORK_LABEL[card.work]}] ${card.title}`,
+    description:`Prioridade: ${PRIO_LABEL[card.prio]}\nMembros: ${card.members.join(', ')||'—'}`,
+    start:{dateTime:dt,timeZone:tz},
+    end:{dateTime:endDt,timeZone:tz},
+    reminders:{useDefault:false,overrides:[{method:'popup',minutes:30},{method:'email',minutes:60}]},
+    attendees:card.members.filter(m=>m.includes('@')).map(e=>({email:e}))
+  };
+  fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+gAccessToken,'Content-Type':'application/json'},
+    body:JSON.stringify(body)
+  }).then(r=>r.json()).then(ev=>{
+    if(ev.id){showToast('Evento criado no Google Calendar!');}
+    else{showToast('Erro ao criar evento. Refaça o login.');gAccessToken=null;updateGcalBadge();}
+  }).catch(()=>{showToast('Falha na conexão.');});
+}
+
+function addHour(t){
+  const [h,m]=t.split(':').map(Number);
+  return String(h+1).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'){
+    closeModal();closeGcalModal();
+  }
+});
+document.getElementById('m-member').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addMember();}});
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
+document.getElementById('gcal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('gcal-overlay'))closeGcalModal();});
+
+render();
+</script>
+</body>
+</html>
